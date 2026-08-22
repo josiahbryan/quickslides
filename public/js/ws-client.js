@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------
 
 window.SlideSocket = (function () {
-	function connect({ onState, onStatus }) {
+	function connect({ onState, onStatus, onOpen, onMessage }) {
 		// Derive the ws:// (or wss:// under https) URL from the current page origin
 		// so this works whether served on localhost, LAN IP, or a tunnel.
 		const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -40,6 +40,9 @@ window.SlideSocket = (function () {
 
 			ws.onopen = () => {
 				if (typeof onStatus === 'function') onStatus(true);
+				// Control uses this to re-push localStorage display settings after
+				// every reconnect so a server restart does not drop them.
+				if (typeof onOpen === 'function') onOpen();
 			};
 
 			ws.onmessage = (event) => {
@@ -54,6 +57,9 @@ window.SlideSocket = (function () {
 					api.lastState = msg.state;
 					onState(msg.state);
 				}
+				// Non-state frames (e.g. requestViewport) — Presentation uses
+				// this to re-send innerWidth/innerHeight on demand.
+				if (typeof onMessage === 'function') onMessage(msg);
 			};
 
 			ws.onclose = () => {

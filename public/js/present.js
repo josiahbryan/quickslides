@@ -31,42 +31,37 @@
 	const counterEl = document.getElementById('counter'); // "12 / 247" text
 
 	// =========================================================================
-	// TV-SAFE PROJECTION PADDING — TWEAK THESE TWO.
-	// File: public/js/present.js  (this file, the two consts just below)
-	//
-	// TVs / some projectors overscan: they crop a strip off every edge. These
-	// two fractions keep lyrics (and the tiny operator overlays) inside the
-	// "safe" inner rectangle.
-	//
-	// Values are a FRACTION of the viewport, applied to BOTH matching edges:
-	//   TV_SAFE_PAD_Y = 0.06  ->  6% of height as padding on TOP and on BOTTOM
-	//   TV_SAFE_PAD_X = 0.08  ->  8% of width  as padding on LEFT and on RIGHT
-	//
-	// NO HMR. This app serves vanilla JS with no bundler. After you change a
-	// const, hard-refresh the Presentation tab (Cmd+R). The Control tab does
-	// not need a reload for this; only /present reads these numbers.
+	// DISPLAY SETTINGS — defaults used to live as consts in this file.
+	// The Control window Settings panel now owns them (localStorage + live
+	// WebSocket). These defaults still apply until the first state push that
+	// includes displaySettings. Tweak them in Control, not here.
 	// =========================================================================
-	const TV_SAFE_PAD_Y = 0.06;
-	const TV_SAFE_PAD_X = 0.08;
+	let settings = window.DisplaySettings
+		? window.DisplaySettings.normalize({ raw: {} })
+		: {
+				tvSafePadY: 0.06,
+				tvSafePadX: 0.08,
+				fitMinPx: 56,
+				fitMaxPx: 72,
+				showCursor: true,
+				crossfadeMs: 500,
+				bgCrossfadeMultiplier: 3,
+			};
 
-	// Hard cap on lyric font-size (px). Auto-fit still shrinks long slides to
-	// fit the TV-safe box, but short slides ("Amen", one line) stop growing
-	// here so they don't fill the entire screen. Tweak this; then Cmd+R on
-	// /present (no HMR, no server restart).
-	const FIT_MAX_PX = 72;
-
-	// Floor (px). We never shrink below this. If a line is still too wide at
-	// this size, we wrap it (see .slide.wrapping) instead of going smaller.
-	const FIT_MIN_PX = 56;
-
-	// Show the mouse pointer on the presentation window. Default ON so you can
-	// aim a clicker/trackpad at the projector window. Set false and Cmd+R
-	// /present to hide it (no HMR).
-	const SHOW_CURSOR = true;
-
-	// Overlap crossfade duration (ms). Incoming fades in while outgoing fades
-	// out. Tweak this; then Cmd+R /present (no HMR).
-	const CROSSFADE_MS = 500;
+	function applyDisplaySettings({ next }) {
+		const incoming = window.DisplaySettings
+			? window.DisplaySettings.normalize({ raw: next || {} })
+			: settings;
+		const prevSig = JSON.stringify(settings);
+		settings = incoming;
+		document.body.style.cursor = settings.showCursor ? 'default' : 'none';
+		const bgMs = window.DisplaySettings
+			? window.DisplaySettings.bgCrossfadeMs({ settings })
+			: Math.round(settings.crossfadeMs * settings.bgCrossfadeMultiplier);
+		document.documentElement.style.setProperty('--crossfade-ms', settings.crossfadeMs + 'ms');
+		document.documentElement.style.setProperty('--bg-crossfade-ms', bgMs + 'ms');
+		return prevSig !== JSON.stringify(settings);
+	}
 
 	// Remember what we last rendered so we can (a) skip redundant re-renders and
 	// (b) only play the fade-in animation when the VISIBLE slide truly changed.
@@ -134,8 +129,8 @@
 	function tvSafeInnerSize() {
 		const viewW = stageEl.clientWidth;
 		const viewH = stageEl.clientHeight;
-		const padX = Math.round(viewW * TV_SAFE_PAD_X);
-		const padY = Math.round(viewH * TV_SAFE_PAD_Y);
+		const padX = Math.round(viewW * settings.tvSafePadX);
+		const padY = Math.round(viewH * settings.tvSafePadY);
 
 		// box-sizing: border-box is on *, so this padding shrinks the content
 		// box the slide sits in. Flex centering then keeps lyrics in the middle
@@ -184,10 +179,10 @@
 		slideEl.classList.remove('wrapping');
 		slideEl.style.maxWidth = '';
 
-		let lo = FIT_MIN_PX;
+		let lo = settings.fitMinPx;
 		// Never search above FIT_MAX_PX, and never above the safe box height.
-		let hi = Math.max(FIT_MIN_PX, Math.min(FIT_MAX_PX, Math.floor(availH)));
-		let best = FIT_MIN_PX;
+		let hi = Math.max(settings.fitMinPx, Math.min(settings.fitMaxPx, Math.floor(availH)));
+		let best = settings.fitMinPx;
 
 		// Standard "largest value that satisfies a monotonic predicate" binary
 		// search: bigger font -> bigger block, so "fits" flips from true to false
@@ -216,7 +211,7 @@
 		if (slideEl.scrollWidth > availW) {
 			slideEl.classList.add('wrapping');
 			slideEl.style.maxWidth = availW + 'px';
-			slideEl.style.fontSize = FIT_MIN_PX + 'px';
+			slideEl.style.fontSize = settings.fitMinPx + 'px';
 		}
 	}
 
@@ -266,7 +261,7 @@
 			slideOutEl.replaceChildren();
 			slideOutEl.className = 'slide slide-out';
 			leaveTimer = null;
-		}, CROSSFADE_MS + 30);
+		}, settings.crossfadeMs + 30);
 	}
 
 	function playIncomingFade() {
@@ -289,10 +284,12 @@
 		const total = slides.length;
 		const slide = slides[currentIndex];
 
-		// Blackout is independent of which slide is current. Apply it on EVERY
-		// state push (including ones that would otherwise be signature-skipped)
-		// so toggling Black hides/shows instantly without rebuilding the slide.
-		// body.blackout CSS hides slide + overlays; the stage stays pure black.
+		// Display knobs, blackout, and BG all apply on EVERY push — they can
+		// change without the visible slide text changing.
+		const settingsChanged = applyDisplaySettings({
+			next: state && state.displaySettings,
+		});
+
 		document.body.classList.toggle('blackout', state && state.blackout === true);
 
 		// Background is independent of the current slide. Apply on every push
@@ -314,7 +311,10 @@
 		// skip the DOM work and the fade (avoids flicker on unrelated state pushes,
 		// e.g. an edit to some OTHER slide the viewer isn't showing).
 		const signature = slide ? `${currentIndex}\u0000${slide.text}` : '__none__';
-		if (signature === lastRenderSignature) return;
+		if (signature === lastRenderSignature) {
+			if (settingsChanged) fitText();
+			return;
+		}
 		lastRenderSignature = signature;
 
 		if (!slide) {
@@ -348,11 +348,37 @@
 	// into a single fit per frame instead of thrashing layout.
 	// -------------------------------------------------------------------------
 	let resizeRaf = null;
+	let viewportReportTimer = null;
+	let lastReportedViewport = { width: 0, height: 0 };
+	let sock = null;
+
+	// Tell Control the live projector inner size so its preview can match
+	// this window's aspect ratio. Skip the wire if nothing changed.
+	function reportViewport({ force } = { force: false }) {
+		const width = window.innerWidth;
+		const height = window.innerHeight;
+		if (width < 1 || height < 1) return;
+		if (!force && lastReportedViewport.width === width && lastReportedViewport.height === height) {
+			return;
+		}
+		lastReportedViewport = { width, height };
+		if (sock) {
+			sock.send({ type: window.MSG.VIEWPORT, width, height });
+		}
+	}
+
 	function onResize() {
 		if (resizeRaf) cancelAnimationFrame(resizeRaf);
 		resizeRaf = requestAnimationFrame(() => {
 			resizeRaf = null;
 			fitText();
+			// Coalesce drag-resize reports (~50ms) so we stay live without
+			// flooding the socket on every mouse-move pixel.
+			if (viewportReportTimer) clearTimeout(viewportReportTimer);
+			viewportReportTimer = setTimeout(() => {
+				viewportReportTimer = null;
+				reportViewport();
+			}, 50);
 		});
 	}
 	window.addEventListener('resize', onResize);
@@ -363,8 +389,7 @@
 
 	// Cursor visibility is a tweak flag, not a CSS hard-code, so flipping
 	// SHOW_CURSOR and refreshing /present is the whole workflow.
-	document.body.style.cursor = SHOW_CURSOR ? 'default' : 'none';
-	document.documentElement.style.setProperty('--crossfade-ms', CROSSFADE_MS + 'ms');
+	applyDisplaySettings({ next: settings });
 
 	// Fonts can load/settle after first paint and change text metrics; when that
 	// happens, refit so we don't end up slightly too big or too small. Guarded in
@@ -377,8 +402,27 @@
 	// Boot: open the shared socket. onState re-renders on every push; onStatus
 	// updates the connection dot. The socket auto-reconnects on its own.
 	// -------------------------------------------------------------------------
-	window.SlideSocket.connect({
+	sock = window.SlideSocket.connect({
 		onState: (state) => render({ state }),
 		onStatus: (isConnected) => setConnected({ isConnected }),
+		onOpen: () => {
+			// Page-load / reconnect: always send the current inner size so
+			// Control does not stay on the 16:9 fallback.
+			reportViewport({ force: true });
+		},
+		onMessage: (msg) => {
+			if (msg && msg.type === window.MSG.REQUEST_VIEWPORT) {
+				reportViewport({ force: true });
+			}
+		},
 	});
+
+	// Window `load` fires after layout; innerWidth is trustworthy here even
+	// if the socket opened a moment earlier against a 0×0 first paint.
+	window.addEventListener('load', () => {
+		reportViewport({ force: true });
+	});
+	if (document.readyState === 'complete') {
+		reportViewport({ force: true });
+	}
 })();

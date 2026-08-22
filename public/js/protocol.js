@@ -15,4 +15,7 @@ window.MSG = {
 	BLACKOUT: 'blackout', // client -> server: { on?: boolean }  (omit on to toggle)
 	DUPLICATE_SLIDE: 'duplicateSlide', // client -> server: { id }
 	BACKGROUND: 'background', // client -> server: { on?: boolean }
+	DISPLAY_SETTINGS: 'displaySettings', // client -> server: { settings }
+	VIEWPORT: 'viewport', // present -> server: { width, height }
+	REQUEST_VIEWPORT: 'requestViewport', // control -> server: ask /present to re-report
 };

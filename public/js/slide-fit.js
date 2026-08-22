@@ -13,11 +13,30 @@
 // -----------------------------------------------------------------------------
 
 window.SlideFit = (function () {
-	const TV_SAFE_PAD_Y = 0.06;
-	const TV_SAFE_PAD_X = 0.08;
-	const FIT_MAX_PX = 72;
-	const FIT_MIN_PX = 56;
-	const PROJECTOR_W = 1920;
+	// Defaults match DisplaySettings.DEFAULTS / the old present.js consts.
+	// ControlSettings calls configure() so the preview tracks the Settings panel.
+	let TV_SAFE_PAD_Y = 0.06;
+	let TV_SAFE_PAD_X = 0.08;
+	let FIT_MAX_PX = 72;
+	let FIT_MIN_PX = 56;
+	// Font min/max are calibrated for the live Presentation window width.
+	// Until /present reports a size we assume a 1920-wide projector.
+	let PROJECTOR_W = 1920;
+
+	function configure({ settings, projectorWidth }) {
+		if (settings) {
+			const s = window.DisplaySettings
+				? window.DisplaySettings.normalize({ raw: settings || {} })
+				: settings || {};
+			if (typeof s.tvSafePadY === 'number') TV_SAFE_PAD_Y = s.tvSafePadY;
+			if (typeof s.tvSafePadX === 'number') TV_SAFE_PAD_X = s.tvSafePadX;
+			if (typeof s.fitMaxPx === 'number') FIT_MAX_PX = s.fitMaxPx;
+			if (typeof s.fitMinPx === 'number') FIT_MIN_PX = s.fitMinPx;
+		}
+		if (Number.isFinite(projectorWidth) && projectorWidth > 0) {
+			PROJECTOR_W = projectorWidth;
+		}
+	}
 
 	function linesFromText({ text }) {
 		const raw = typeof text === 'string' ? text : '';
@@ -102,10 +121,7 @@ window.SlideFit = (function () {
 	}
 
 	return {
-		TV_SAFE_PAD_Y,
-		TV_SAFE_PAD_X,
-		FIT_MAX_PX,
-		FIT_MIN_PX,
+		configure,
 		PROJECTOR_W,
 		linesFromText,
 		render,

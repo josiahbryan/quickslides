@@ -39,6 +39,17 @@
 			</button>
 			<input id="bg-file" type="file" accept="image/jpeg,image/png,image/webp" hidden />
 
+			<button
+				type="button"
+				class="btn"
+				id="btn-settings"
+				aria-expanded="false"
+				aria-controls="settings-panel"
+				title="Projector display settings (crossfade, fit, TV-safe pad, cursor)"
+			>
+				Settings
+			</button>
+
 			<!-- Open the presentation (viewer) window in a new tab. -->
 			<a class="btn" id="btn-present" href="/present" target="_blank" rel="noopener">
 				Open Presentation ↗
@@ -119,6 +130,54 @@
 			</section>
 		</div>
 
+		<!-- Projector knobs. Hidden until Settings is clicked. Values persist
+		     in this browser's localStorage and go out over the WebSocket live. -->
+		<div id="settings-panel" class="settings-panel" hidden>
+			<div id="settings-backdrop" class="settings-backdrop" aria-hidden="true"></div>
+			<div class="settings-card" role="dialog" aria-labelledby="settings-title">
+				<h2 id="settings-title">Projector settings</h2>
+				<p class="settings-lead">
+					Saved in this browser. Changes apply on the presentation window immediately.
+				</p>
+				<div class="settings-grid">
+					<label class="settings-field">
+						<span>Crossfade (ms)</span>
+						<input id="set-crossfade-ms" type="number" min="0" max="20000" step="50" />
+					</label>
+					<label class="settings-field">
+						<span>BG fade multiplier</span>
+						<input id="set-bg-multiplier" type="number" min="0.1" max="20" step="0.5" />
+					</label>
+					<label class="settings-field">
+						<span>Font min (px)</span>
+						<input id="set-fit-min" type="number" min="8" max="400" step="1" />
+					</label>
+					<label class="settings-field">
+						<span>Font max (px)</span>
+						<input id="set-fit-max" type="number" min="8" max="400" step="1" />
+					</label>
+					<label class="settings-field">
+						<span>TV-safe pad Y (0–0.4)</span>
+						<input id="set-pad-y" type="number" min="0" max="0.4" step="0.01" />
+					</label>
+					<label class="settings-field">
+						<span>TV-safe pad X (0–0.4)</span>
+						<input id="set-pad-x" type="number" min="0" max="0.4" step="0.01" />
+					</label>
+					<label class="settings-check">
+						<input id="set-show-cursor" type="checkbox" />
+						<span>Show cursor on projector</span>
+					</label>
+				</div>
+				<div class="settings-actions">
+					<button type="button" class="btn" id="btn-settings-reset" title="Restore the original present.js defaults">
+						Reset to defaults
+					</button>
+					<button type="button" class="btn primary" id="btn-settings-close">Done</button>
+				</div>
+			</div>
+		</div>
+
 		<!-- ========================== NAV FOOTER ========================== -->
 		<footer class="nav-footer">
 			<button type="button" class="nav-btn" id="btn-prev">
@@ -141,11 +200,13 @@
 			  7. control.js         -> app entry
 		-->
 		<script src="/js/protocol.js"></script>
+		<script src="/js/display-settings.js"></script>
 		<script src="/js/ws-client.js"></script>
 		<script src="/js/bm25.js"></script>
 		<script src="/js/control-list.js"></script>
 		<script src="/js/slide-fit.js"></script>
 		<script src="/js/control-preview.js"></script>
+		<script src="/js/control-settings.js"></script>
 		<script src="/js/control.js"></script>
 	</body>
 </html>

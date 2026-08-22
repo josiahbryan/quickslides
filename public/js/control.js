@@ -38,6 +38,7 @@
 		blackout: false,
 		backgroundOn: false,
 		backgroundUrl: '',
+		presenterViewport: null,
 	};
 
 	// Which slide the editor is currently editing. This is a real, independent
@@ -429,7 +430,20 @@
 			blackout: nextState.blackout === true,
 			backgroundOn: nextState.backgroundOn === true,
 			backgroundUrl: typeof nextState.backgroundUrl === 'string' ? nextState.backgroundUrl : '',
+			presenterViewport: nextState.presenterViewport || null,
 		};
+
+		// Live projector size → preview aspect ratio (no Control reload).
+		if (
+			window.ControlPreview &&
+			typeof window.ControlPreview.setViewport === 'function' &&
+			state.presenterViewport
+		) {
+			window.ControlPreview.setViewport({
+				width: state.presenterViewport.width,
+				height: state.presenterViewport.height,
+			});
+		}
 
 		// Resolve which slide should be selected/edited after this update:
 		//  - After duplicate: select the copy inserted after the source id.
@@ -726,8 +740,35 @@
 			slide: document.getElementById('preview-slide'),
 		});
 
+		function pushDisplaySettings({ settings }) {
+			if (window.SlideFit && typeof window.SlideFit.configure === 'function') {
+				window.SlideFit.configure({ settings });
+			}
+			updatePreview();
+			if (sock) {
+				sock.send({ type: window.MSG.DISPLAY_SETTINGS, settings });
+			}
+		}
+
+		const settingsApi = window.ControlSettings.bind({
+			onChange: pushDisplaySettings,
+		});
+		// Apply stored knobs to the control preview before the socket is up.
+		pushDisplaySettings({ settings: settingsApi.getSettings() });
+
 		// Open the socket. onState/onStatus drive all rendering from here on.
-		sock = window.SlideSocket.connect({ onState, onStatus });
+		// onOpen re-pushes localStorage settings so a server restart picks them
+		// up without the operator reopening Settings.
+		sock = window.SlideSocket.connect({
+			onState,
+			onStatus,
+			onOpen: () => {
+				pushDisplaySettings({ settings: settingsApi.getSettings() });
+				// Ask /present to send innerWidth/innerHeight now — do not wait
+				// for the operator to resize the projector window.
+				sock.send({ type: window.MSG.REQUEST_VIEWPORT });
+			},
+		});
 	}
 
 	// The scripts are loaded at the end of <body>, but guard for safety in case the

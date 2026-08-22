@@ -73,12 +73,18 @@ const wss = new WebSocketServer({ server });
 
 // Broadcast the current authoritative deck state to every open socket. This is
 // called after any mutation and once to each client on connect.
-function broadcastState() {
-	const payload = JSON.stringify({ type: MSG.STATE, state: state.getDeck() });
+function sendToAll({ payload }) {
 	for (const client of wss.clients) {
-		// readyState 1 === OPEN. Skip clients that are connecting/closing.
 		if (client.readyState === 1) client.send(payload);
 	}
+}
+
+function broadcastState() {
+	sendToAll({ payload: JSON.stringify({ type: MSG.STATE, state: state.getDeck() }) });
+}
+
+function broadcastRequestViewport() {
+	sendToAll({ payload: JSON.stringify({ type: MSG.REQUEST_VIEWPORT }) });
 }
 
 // Handle a single decoded client message by dispatching to the right mutation,
@@ -109,6 +115,18 @@ function handleMessage(msg) {
 		case MSG.BACKGROUND:
 			state.setBackground({ on: msg.on });
 			break;
+		case MSG.DISPLAY_SETTINGS:
+			state.setDisplaySettings({ settings: msg.settings });
+			break;
+		case MSG.VIEWPORT:
+			// Skip the broadcast when the size did not change (resize spam).
+			return state.setPresenterViewport({ width: msg.width, height: msg.height });
+		case MSG.REQUEST_VIEWPORT:
+			// Ask every /present tab to send innerWidth/innerHeight again.
+			broadcastRequestViewport();
+			// If we already know a size, also push state so Control can apply
+			// it immediately without waiting for the presenter round-trip.
+			return Boolean(state.getDeck().presenterViewport);
 		default:
 			// Unknown message types are silently ignored on purpose.
 			return false;
