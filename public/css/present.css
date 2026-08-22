@@ -62,9 +62,10 @@ body.blackout .blackout-veil {
 	background: #000;
 }
 
-/* Background photo (from the PPTX / operator upload). Fades in/out with
- * the same --crossfade-ms as lyrics and blackout. cover + center so any
- * aspect ratio fills the stage without letterboxing. */
+/* Background photo (from the PPTX / operator upload). Fades in/out at
+ * --bg-crossfade-ms (CROSSFADE_MS * 3 from present.js). Lyrics and blackout
+ * stay on the faster --crossfade-ms. cover + center so any aspect ratio
+ * fills the stage without letterboxing. */
 .stage-bg {
 	position: absolute;
 	inset: 0;
@@ -72,7 +73,7 @@ body.blackout .blackout-veil {
 	background-size: cover;
 	background-repeat: no-repeat;
 	opacity: 0;
-	transition: opacity var(--crossfade-ms, 333ms) ease-in-out;
+	transition: opacity var(--bg-crossfade-ms, 1500ms) ease-in-out;
 	z-index: 0;
 	pointer-events: none;
 }

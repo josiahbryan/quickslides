@@ -318,6 +318,35 @@ body {
 	line-height: 1.35;
 }
 
+/* Blank slide: quieter so empty rows are easy to scan past, but still a
+ * live operator row (hover, click, drag, amber "on screen" bar all work).
+ * Do NOT use the :disabled recipe (0.3 opacity + default cursor) — that
+ * reads as "you cannot use this." */
+.slide-item.is-blank {
+	background: color-mix(in srgb, var(--panel) 50%, var(--bg));
+}
+
+.slide-item.is-blank:hover,
+.slide-item.is-blank.is-selected {
+	background: var(--panel-2);
+}
+
+.slide-item.is-blank.is-match {
+	background: color-mix(in srgb, #182033 70%, var(--bg));
+}
+
+.slide-item.is-blank .slide-index {
+	color: var(--text-dim);
+	opacity: 0.7;
+}
+
+.slide-preview.is-placeholder {
+	color: var(--text-dim);
+	font-style: italic;
+	font-weight: 400;
+	letter-spacing: 0.02em;
+}
+
 /* Per-row action buttons appear on hover to reduce clutter. */
 .slide-actions {
 	flex: 0 0 auto;
@@ -696,4 +725,95 @@ body {
 		font-size: 18px;
 		padding: 14px 16px;
 	}
+}
+
+/* ------------------------------------------------------- settings panel */
+
+.settings-panel {
+	position: fixed;
+	inset: 0;
+	z-index: 40;
+	display: flex;
+	align-items: flex-start;
+	justify-content: flex-end;
+	padding: 64px 18px 18px;
+}
+
+.settings-panel[hidden] {
+	display: none;
+}
+
+.settings-backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.45);
+}
+
+.settings-card {
+	position: relative;
+	z-index: 1;
+	width: min(420px, 100%);
+	max-height: calc(100vh - 86px);
+	overflow: auto;
+	padding: 18px 18px 16px;
+	background: var(--panel);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.settings-card h2 {
+	margin: 0 0 6px;
+	font-size: 16px;
+}
+
+.settings-lead {
+	margin: 0 0 14px;
+	color: var(--text-dim);
+	font-size: 13px;
+}
+
+.settings-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px 14px;
+}
+
+.settings-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 12px;
+	color: var(--text-dim);
+}
+
+.settings-field input {
+	padding: 7px 8px;
+	font-size: 14px;
+	color: var(--text);
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+}
+
+.settings-field input:focus {
+	outline: 2px solid var(--accent);
+	outline-offset: 1px;
+}
+
+.settings-check {
+	grid-column: 1 / -1;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 14px;
+	color: var(--text);
+	cursor: pointer;
+}
+
+.settings-actions {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	margin-top: 16px;
 }

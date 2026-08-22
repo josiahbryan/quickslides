@@ -107,12 +107,14 @@ describe('HTTP + WebSocket smoke (spawned server)', () => {
 				if (messages.length === 1) {
 					assert.equal(msg.type, 'state');
 					assert.ok(Array.isArray(msg.state.slides));
+					assert.ok(msg.state.displaySettings, 'state should include displaySettings');
 					console.log(
 						'connect state slides',
 						msg.state.slides.length,
 						'index',
 						msg.state.currentIndex
 					);
+					console.log('connect displaySettings', msg.state.displaySettings);
 					ws.send(JSON.stringify({ type: 'nav', action: 'next' }));
 				} else if (messages.length === 2) {
 					clearTimeout(timer);

@@ -143,6 +143,31 @@ describe('state mutations', () => {
 		assert.equal(deck.currentIndex, 1);
 	});
 
+	it('setPresenterViewport records size and ignores no-op / invalid', () => {
+		assert.equal(state.getDeck().presenterViewport, null);
+		const first = state.setPresenterViewport({ width: 1280, height: 800 });
+		const second = state.setPresenterViewport({ width: 1280, height: 800 });
+		const bad = state.setPresenterViewport({ width: 0, height: 800 });
+		const next = state.setPresenterViewport({ width: 1920.4, height: 1080.2 });
+		const vp = state.getDeck().presenterViewport;
+		console.log('presenterViewport', vp, 'first', first, 'noop', second, 'bad', bad, 'next', next);
+		assert.equal(first, true);
+		assert.equal(second, false);
+		assert.equal(bad, false);
+		assert.equal(next, true);
+		assert.deepEqual(vp, { width: 1920, height: 1080 });
+	});
+
+	it('setDisplaySettings normalizes and rides on getDeck without touching slides', () => {
+		const beforeLen = state.getDeck().slides.length;
+		state.setDisplaySettings({ settings: { crossfadeMs: 800, bgCrossfadeMultiplier: 2 } });
+		const deck = state.getDeck();
+		console.log('displaySettings', deck.displaySettings);
+		assert.equal(deck.displaySettings.crossfadeMs, 800);
+		assert.equal(deck.displaySettings.bgCrossfadeMultiplier, 2);
+		assert.equal(deck.slides.length, beforeLen);
+	});
+
 	it('setBlackout toggles and setBackground sets on + url', () => {
 		assert.equal(state.getDeck().blackout, false);
 		state.setBlackout({});

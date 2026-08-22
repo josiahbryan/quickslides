@@ -47,6 +47,24 @@ const MSG = {
 	// client -> server: toggle (or set) the background image.
 	// Shape: { type: 'background', on?: boolean }
 	BACKGROUND: 'background',
+
+	// client -> server: replace projector display settings (pads, fit, fade).
+	// Shape: { type: 'displaySettings', settings: { ... } }
+	// Server normalizes, keeps them in memory, and includes them on every
+	// full-state broadcast so /present applies them live.
+	DISPLAY_SETTINGS: 'displaySettings',
+
+	// client -> server: the Presentation window's current inner size.
+	// Shape: { type: 'viewport', width, height }
+	// Control uses this so the preview stage matches the live projector
+	// aspect ratio. Last present window to report wins.
+	VIEWPORT: 'viewport',
+
+	// Control -> server: ask every Presentation window to re-report its size.
+	// Shape: { type: 'requestViewport' }
+	// Used on Control page load so the preview does not sit on 16:9 waiting
+	// for a resize. Server fans this out; Present answers with VIEWPORT.
+	REQUEST_VIEWPORT: 'requestViewport',
 };
 
 module.exports = { MSG };

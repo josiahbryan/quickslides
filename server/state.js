@@ -39,6 +39,11 @@ const EXAMPLE_FILE = path.join(__dirname, '..', 'data', 'deck.example.json');
 
 // The live, in-memory deck. Everything reads/writes this object. On startup we
 // hydrate it from disk (if present); otherwise we start with an empty deck.
+const {
+	DEFAULTS: DISPLAY_DEFAULTS,
+	normalize: normalizeDisplaySettings,
+} = require('./display-settings');
+
 const DEFAULT_BG_URL = '/bg/default.jpg';
 
 let deck = {
@@ -48,6 +53,15 @@ let deck = {
 	backgroundOn: false,
 	backgroundUrl: DEFAULT_BG_URL,
 };
+
+// Last display settings pushed by Control. Not written to deck.json —
+// Control's localStorage is the operator store; we only relay.
+let displaySettings = normalizeDisplaySettings({ raw: DISPLAY_DEFAULTS });
+
+// Last reported Presentation-window inner size. Memory only — used so the
+// Control preview can match the live projector aspect ratio as the operator
+// resizes /present. null until a presenter has checked in.
+let presenterViewport = null;
 
 function applyBackgroundFields({ parsed }) {
 	return {
@@ -152,9 +166,32 @@ function clampIndex() {
 	}
 }
 
-// Return the current deck object (live reference; callers should treat as read-only).
+// Return the current deck plus the in-memory display settings. Shallow copy
+// so adding displaySettings never accidentally writes them into deck.json
+// (saveNow serializes `deck`, not this object).
 function getDeck() {
-	return deck;
+	return { ...deck, displaySettings, presenterViewport };
+}
+
+// Replace projector knobs. Control sends these from localStorage / the
+// Settings panel. We do not scheduleSave — these are not part of the lyric deck.
+function setDisplaySettings({ settings }) {
+	displaySettings = normalizeDisplaySettings({ raw: settings });
+	return getDeck();
+}
+
+// Record the Presentation window's inner pixel size. Returns true only when
+// the stored size actually changed, so the server can skip a no-op broadcast
+// while the operator is still dragging the window.
+function setPresenterViewport({ width, height }) {
+	const w = Math.round(Number(width));
+	const h = Math.round(Number(height));
+	if (!Number.isFinite(w) || !Number.isFinite(h) || w < 1 || h < 1) return false;
+	if (presenterViewport && presenterViewport.width === w && presenterViewport.height === h) {
+		return false;
+	}
+	presenterViewport = { width: w, height: h };
+	return true;
 }
 
 // Replace the entire deck (used by the importer). Resets to the first slide.
@@ -315,6 +352,8 @@ module.exports = {
 	reorder,
 	setBlackout,
 	setBackground,
+	setDisplaySettings,
+	setPresenterViewport,
 	saveNow,
 	DEFAULT_BG_URL,
 	DECK_FILE,

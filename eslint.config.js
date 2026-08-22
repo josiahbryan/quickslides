@@ -47,7 +47,7 @@ module.exports = [
 	// `module` is a real CommonJS binding in Node and undefined in the browser;
 	// we only *read* it inside `typeof module !== 'undefined'`.
 	{
-		files: ['public/js/bm25.js'],
+		files: ['public/js/bm25.js', 'public/js/display-settings.js'],
 		languageOptions: {
 			globals: {
 				module: 'readonly',

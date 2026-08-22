@@ -43,6 +43,10 @@ window.ControlList = (function () {
 		if (index === currentIndex) li.classList.add('is-current');
 		if (slide.id === selectedId) li.classList.add('is-selected');
 		if (matchIds && matchIds.has(slide.id)) li.classList.add('is-match');
+		// Empty body: still a real, clickable row. We only mark it so CSS can
+		// show "(blank)" as a dim placeholder — not the 0.3-opacity disabled look.
+		const isBlank = String(slide.text || '').trim().length === 0;
+		if (isBlank) li.classList.add('is-blank');
 
 		// --- Left: 1-based index badge ---
 		const badge = document.createElement('span');
@@ -52,7 +56,7 @@ window.ControlList = (function () {
 
 		// --- Middle: the text preview (escaped via textContent) ---
 		const preview = document.createElement('span');
-		preview.className = 'slide-preview';
+		preview.className = 'slide-preview' + (isBlank ? ' is-placeholder' : '');
 		preview.textContent = previewText({ text: slide.text });
 		li.appendChild(preview);
 
