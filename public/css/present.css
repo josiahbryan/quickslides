@@ -1,0 +1,205 @@
+/* present.css
+ * -----------------------------------------------------------------------------
+ * Styling for the PRESENTATION (viewer) window only.
+ *
+ * Design goals (this is projected worship lyrics in a room):
+ *   - Pure black background, bright white text -> maximum contrast/readability.
+ *   - One slide on screen at a time, perfectly centered both axes.
+ *   - The actual sizing of the text is done in JS (the auto-fit routine); CSS
+ *     here just establishes the full-screen stage, typography, and the subtle
+ *     operator overlays (connection dot + slide counter).
+ * -----------------------------------------------------------------------------
+ */
+
+/* Reset the essentials so the stage can truly fill the viewport with no gaps. */
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+html,
+body {
+	width: 100%;
+	height: 100%;
+	overflow: hidden; /* never scroll; the fit routine keeps everything on-screen */
+	background: #000; /* black behind everything, including during resize reflow */
+}
+
+body {
+	/* A clean, tall, readable font stack. System fonts avoid any web-font FOUT
+	 * flashing on a projector at service time. */
+	font-family: 'Helvetica Neue', Helvetica, Arial, 'Segoe UI', system-ui, sans-serif;
+	color: #fff;
+	/* Cursor show/hide is driven by SHOW_CURSOR in public/js/present.js
+	 * (default: shown). Don't hard-hide it here or the flag can't win. */
+	-webkit-font-smoothing: antialiased;
+}
+
+/* Operator-toggled blackout: a full-screen black veil fades in/out over the
+ * lyrics (and overlays) using the same --crossfade-ms as slide changes.
+ * The current slide is not rebuilt — we just cover it. */
+.blackout-veil {
+	position: fixed;
+	inset: 0;
+	background: #000;
+	opacity: 0;
+	pointer-events: none;
+	z-index: 20;
+	transition: opacity var(--crossfade-ms, 333ms) ease-in-out;
+}
+
+body.blackout .blackout-veil {
+	opacity: 1;
+}
+
+/* The full-screen surface. Slides are absolutely centered so incoming and
+ * outgoing layers can occupy the same box during a crossfade. */
+.stage {
+	position: fixed;
+	inset: 0; /* top/right/bottom/left: 0 -> fill the viewport */
+	text-align: center;
+	background: #000;
+}
+
+/* Background photo (from the PPTX / operator upload). Fades in/out with
+ * the same --crossfade-ms as lyrics and blackout. cover + center so any
+ * aspect ratio fills the stage without letterboxing. */
+.stage-bg {
+	position: absolute;
+	inset: 0;
+	background-position: center;
+	background-size: cover;
+	background-repeat: no-repeat;
+	opacity: 0;
+	transition: opacity var(--crossfade-ms, 333ms) ease-in-out;
+	z-index: 0;
+	pointer-events: none;
+}
+
+.stage-bg.is-on {
+	opacity: 1;
+}
+
+/* The slide text block. Positioned in the center of the stage so two copies
+ * (current + departing) can overlap. Font-size is overwritten by JS. */
+.slide {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	font-size: 8vw; /* baseline starting size; JS shrinks/grows to actually fit */
+	line-height: 1.15; /* comfortable spacing between lyric lines */
+	font-weight: 600; /* slightly bold reads better from a distance */
+	max-width: 100%;
+	letter-spacing: 0.01em;
+	text-wrap: balance; /* nicer wrapping fallback where supported */
+	text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6); /* subtle depth on bright rooms */
+	z-index: 2;
+}
+
+/* One line of the slide (we render each \n-separated line as its own element).
+ * Default nowrap: the fitter measures true single-line width and shrinks until
+ * it fits. If we hit FIT_MIN_PX and it's still too wide, present.js adds
+ * .wrapping and we allow soft wraps instead of shrinking further. */
+.slide .line {
+	white-space: nowrap;
+	display: block;
+}
+
+/* Safe wrap at the min font size: break on spaces, and break long tokens
+ * (URLs, unspaced words) so nothing can punch past the TV-safe edge. */
+.slide.wrapping .line {
+	white-space: normal;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+	max-width: 100%;
+}
+
+/* Placeholder shown when there is no slide to display (empty deck / bad index).
+ * Deliberately dim and small so an accidental blank never looks like a title. */
+.slide.placeholder {
+	font-size: 4vh !important; /* fixed, modest size; not run through the fitter */
+	font-weight: 400;
+	color: #444; /* subtle gray, clearly "nothing here" rather than content */
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	text-shadow: none;
+}
+
+/* Overlap crossfade: outgoing fades out while incoming fades in.
+ * Duration is --crossfade-ms from present.js CROSSFADE_MS. */
+@keyframes slideFadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes slideFadeOut {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
+.slide.slide-enter {
+	animation: slideFadeIn var(--crossfade-ms, 333ms) ease-out both;
+	z-index: 2;
+}
+
+.slide.slide-leave {
+	animation: slideFadeOut var(--crossfade-ms, 333ms) ease-in both;
+	pointer-events: none;
+	z-index: 1;
+}
+
+/* ---- Operator overlays: intentionally tiny and dim, pinned to corners ---- */
+
+/* Connection indicator dot (bottom-left). Color is driven by JS via classes. */
+.status {
+	position: fixed;
+	left: 14px;
+	bottom: 12px;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: #b00020; /* default: disconnected (dim red) until proven connected */
+	opacity: 0.55;
+	transition: background-color 200ms ease, opacity 200ms ease;
+	pointer-events: none; /* never intercept clicks */
+	z-index: 10;
+}
+
+/* Connected: soft green with a faint glow so it's readable but not distracting. */
+.status.connected {
+	background: #1db954;
+	opacity: 0.75;
+	box-shadow: 0 0 6px rgba(29, 185, 84, 0.6);
+}
+
+/* Disconnected/reconnecting: dim red, no glow. */
+.status.disconnected {
+	background: #b00020;
+	opacity: 0.5;
+	box-shadow: none;
+}
+
+/* Slide counter (bottom-right), e.g. "12 / 247". Small and dim for the operator. */
+.counter {
+	position: fixed;
+	right: 14px;
+	bottom: 10px;
+	font-size: 14px;
+	font-weight: 400;
+	color: #333; /* dim gray: visible up close, invisible to the audience */
+	letter-spacing: 0.05em;
+	font-variant-numeric: tabular-nums; /* stable width as numbers change */
+	pointer-events: none;
+	z-index: 10;
+	user-select: none;
+}

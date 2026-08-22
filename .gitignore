@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+*.log
+.playwright-mcp/
+
+# Operator-uploaded backgrounds (the PPTX default is committed as public/bg/default.jpg)
+public/bg/custom.*

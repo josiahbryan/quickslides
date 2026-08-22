@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>QuickSlides — Control</title>
+		<!-- Empty data-URI favicon prevents a harmless /favicon.ico 404 in the console. -->
+		<link rel="icon" href="data:," />
+		<link rel="stylesheet" href="/css/control.css" />
+	</head>
+	<body>
+		<!--
+			CONTROL WINDOW (editor + presenter remote).
+			Structure: a 3-row grid — header, main (slide list + editor), nav footer.
+			All dynamic content is populated by control.js from live socket state.
+		-->
+
+		<!-- ============================ HEADER ============================ -->
+		<header class="app-header">
+			<h1 class="app-title"><span class="brand-dot"></span> QuickSlides Control</h1>
+
+			<span class="header-spacer"></span>
+
+			<!-- Connection status indicator, driven by SlideSocket onStatus. -->
+			<div class="status">
+				<span id="status-dot" class="status-dot"></span>
+				<span id="status-text">Connecting…</span>
+			</div>
+
+			<!-- Toggle projector blackout: hides ALL content on /present (pure black). -->
+			<button type="button" class="btn blackout-btn" id="btn-blackout" aria-pressed="false" title="Hide all content on the presentation (pure black). Click again to restore.">
+				Black
+			</button>
+			<button type="button" class="btn bg-btn" id="btn-bg" aria-pressed="false" title="Fade the background image in or out on the projector.">
+				BG
+			</button>
+			<button type="button" class="btn" id="btn-bg-load" title="Load a JPEG or PNG as the projector background.">
+				Load BG
+			</button>
+			<input id="bg-file" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+
+			<!-- Open the presentation (viewer) window in a new tab. -->
+			<a class="btn" id="btn-present" href="/present" target="_blank" rel="noopener">
+				Open Presentation ↗
+			</a>
+		</header>
+
+		<!-- ============================= MAIN ============================= -->
+		<div class="main">
+			<!-- LEFT: ordered slide list with per-row actions. -->
+			<section class="list-panel" aria-label="Slides">
+				<div class="list-toolbar">
+					<span class="list-label">Slides</span>
+					<button type="button" class="btn primary" id="btn-add">+ Add slide</button>
+				</div>
+				<!-- BM25 search: cycles matches in the editor/list only. Never
+				     sends NAV — only Show on screen / Prev / Next change the projector. -->
+				<div class="search-box">
+					<input
+						id="slide-search"
+						class="search-input"
+						type="search"
+						placeholder="Search slides…"
+						autocomplete="off"
+						spellcheck="false"
+					/>
+					<div id="search-popup" class="search-popup" hidden>
+						<button type="button" class="search-arrow" id="search-prev" title="Previous match">←</button>
+						<span id="search-count" class="search-count">0 matches</span>
+						<button type="button" class="search-arrow" id="search-next" title="Next match">→</button>
+						<button type="button" class="search-close" id="search-close" title="Clear search">✕</button>
+					</div>
+				</div>
+				<!-- control-list.js rebuilds this <ul> on every state push. -->
+				<ul class="slide-list" id="slide-list"></ul>
+			</section>
+
+			<!-- RIGHT: live editor for the selected slide. -->
+			<section class="editor-panel" aria-label="Editor">
+				<div class="editor-head">
+					<span class="editor-meta" id="editor-meta">No slide selected</span>
+					<button type="button" class="btn" id="btn-show" title="Show the selected slide on the presentation">
+						Show on screen
+					</button>
+					<button type="button" class="btn" id="btn-duplicate" title="Insert a copy of the selected slide right after it. Does not change what is on the projector.">
+						Duplicate
+					</button>
+					<button type="button" class="btn danger" id="btn-delete-selected" title="Delete the selected slide">
+						Delete
+					</button>
+				</div>
+
+				<!-- One string per slide, newlines separate lines. Bound live to state. -->
+				<textarea
+					id="editor"
+					class="editor-textarea"
+					placeholder="Select or add a slide, then type here. Changes appear live on the presentation."
+					spellcheck="true"
+				></textarea>
+
+				<p class="editor-hint">
+					Tip: click a slide to edit it (does not change the projector). Double-click or “Show on
+					screen” to project it. Use ← / → (or Space) to advance while not typing.
+				</p>
+			</section>
+
+			<!-- RIGHT: 16:9 projector preview of the selected / in-progress slide. -->
+			<section class="preview-panel" aria-label="Slide preview">
+				<div class="preview-head" id="preview-head">
+					<span>Preview</span>
+					<span class="preview-live-badge" id="preview-live-badge" hidden>Live</span>
+				</div>
+				<div class="preview-frame" id="preview-frame">
+					<div id="preview-stage" class="preview-stage">
+						<div id="preview-bg" class="preview-bg" aria-hidden="true"></div>
+						<div id="preview-slide" class="preview-slide"></div>
+					</div>
+				</div>
+			</section>
+		</div>
+
+		<!-- ========================== NAV FOOTER ========================== -->
+		<footer class="nav-footer">
+			<button type="button" class="nav-btn" id="btn-prev">
+				<span class="arrow">←</span> Prev
+			</button>
+			<span class="nav-position" id="nav-position">0 / 0</span>
+			<button type="button" class="nav-btn" id="btn-next">
+				Next <span class="arrow">→</span>
+			</button>
+		</footer>
+
+		<!--
+			Script load order matters:
+			  1. protocol.js   -> defines window.MSG (message type constants)
+			  2. ws-client.js  -> defines window.SlideSocket (connect/send/reconnect)
+			  3. bm25.js         -> defines window.Bm25 (slide content ranker)
+			  4. control-list.js    -> defines window.ControlList (slide list renderer)
+			  5. slide-fit.js       -> defines window.SlideFit (shared lyric layout)
+			  6. control-preview.js -> defines window.ControlPreview
+			  7. control.js         -> app entry
+		-->
+		<script src="/js/protocol.js"></script>
+		<script src="/js/ws-client.js"></script>
+		<script src="/js/bm25.js"></script>
+		<script src="/js/control-list.js"></script>
+		<script src="/js/slide-fit.js"></script>
+		<script src="/js/control-preview.js"></script>
+		<script src="/js/control.js"></script>
+	</body>
+</html>

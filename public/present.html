@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<!--
+			viewport meta so the fit routine's viewport math (clientWidth/Height)
+			matches real device pixels on any display we get projected onto.
+		-->
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<title>QuickSlides — Presentation</title>
+		<!-- Empty data-URI favicon prevents a harmless /favicon.ico 404 in the console. -->
+		<link rel="icon" href="data:," />
+		<link rel="stylesheet" href="/css/present.css" />
+	</head>
+	<body>
+		<!--
+			The "stage" is the full-screen black surface. The presentation window is
+			VIEW ONLY: it renders exactly one slide (the deck's currentIndex) as large,
+			centered, high-contrast text meant to be read across a room / projected.
+		-->
+		<main id="stage" class="stage" aria-live="polite">
+			<!--
+				#slide-out is the departing clone used for overlap crossfade.
+				#slide holds the current slide's lines. Each line of the slide's text
+				becomes its own centered child element (built in JS with textContent so
+				slide content can NEVER inject HTML). The JS fit routine sets its
+				font-size so it grows as large as possible without overflowing.
+			-->
+			<div id="stage-bg" class="stage-bg" aria-hidden="true"></div>
+			<div id="slide-out" class="slide slide-out" aria-hidden="true"></div>
+			<div id="slide" class="slide"></div>
+		</main>
+
+		<!--
+			Unobtrusive operator affordances, pinned to corners and kept dim so they
+			don't distract the audience:
+			  - #status: a tiny connection dot (green=connected, red=disconnected).
+			  - #counter: "current / total", e.g. "12 / 247".
+		-->
+		<div id="status" class="status" title="Connection status" aria-hidden="true"></div>
+		<div id="counter" class="counter" aria-hidden="true"></div>
+		<!-- Fades in/out over everything when Black is toggled. Same duration as slide crossfade. -->
+		<div id="blackout-veil" class="blackout-veil" aria-hidden="true"></div>
+
+		<!--
+			Script load order MATTERS and must be exactly this:
+			  1) protocol.js  -> defines window.MSG (message type constants)
+			  2) ws-client.js -> defines window.SlideSocket (auto-reconnecting socket)
+			  3) present.js    -> our viewer logic, which depends on both above
+		-->
+		<script src="/js/protocol.js"></script>
+		<script src="/js/ws-client.js"></script>
+		<script src="/js/present.js"></script>
+	</body>
+</html>
