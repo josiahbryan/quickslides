@@ -2,6 +2,11 @@ node_modules/
 .DS_Store
 *.log
 .playwright-mcp/
+coverage/
+
+# Local operator deck. Often contains other people's copyrighted lyrics.
+# The repo ships data/deck.example.json instead; the server copies it on first run.
+data/deck.json
 
 # Operator-uploaded backgrounds (the PPTX default is committed as public/bg/default.jpg)
 public/bg/custom.*

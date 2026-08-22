@@ -1,0 +1,48 @@
+name: Bug report
+description: Something does not work the way the README says it should
+title: '[bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. A bug report we can act on has **steps**
+        and **what you actually saw**, not just "search is broken."
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered. Start from `npm start` if that matters.
+      placeholder: |
+        1. npm start
+        2. Open Control and Presentation
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened
+      description: Paste console errors if you have them.
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: 'Node 22, macOS, Chrome 128, PORT=4000'
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I pulled / cloned latest main and can still reproduce this
+          required: true
+        - label: This is not a request to host copyrighted lyrics in the repo
+          required: true

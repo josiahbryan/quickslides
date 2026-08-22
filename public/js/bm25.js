@@ -9,9 +9,10 @@
 // "living hope" ahead of every slide that merely contains "hope".
 //
 // Exposed as window.Bm25 because the page loads plain <script> tags.
+// Also module.exports so Node tests can require this file without a DOM.
 // -----------------------------------------------------------------------------
 
-window.Bm25 = (function () {
+(function attachBm25(global) {
 	// BM25 free parameters. k1 controls term-frequency saturation (1.2–2.0 is
 	// the usual range); b controls how much we penalize long documents (0–1).
 	// These defaults are the textbook Okapi values and work well on short lyric
@@ -80,5 +81,13 @@ window.Bm25 = (function () {
 		return hits;
 	}
 
-	return { tokenize, rankSlides };
-})();
+	const api = { tokenize, rankSlides };
+	// Node tests: require('.../bm25.js') gets the same { tokenize, rankSlides }.
+	if (typeof module !== 'undefined' && module.exports) {
+		module.exports = api;
+	}
+	// Browser: control.html loads this as a classic script.
+	if (global) {
+		global.Bm25 = api;
+	}
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : null);

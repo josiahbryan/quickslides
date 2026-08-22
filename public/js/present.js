@@ -285,8 +285,7 @@
 		// Be defensive about the incoming shape; a malformed push shouldn't crash
 		// the projector mid-service.
 		const slides = state && Array.isArray(state.slides) ? state.slides : [];
-		const currentIndex =
-			state && Number.isInteger(state.currentIndex) ? state.currentIndex : 0;
+		const currentIndex = state && Number.isInteger(state.currentIndex) ? state.currentIndex : 0;
 		const total = slides.length;
 		const slide = slides[currentIndex];
 

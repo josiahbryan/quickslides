@@ -1,0 +1,24 @@
+{
+  "currentIndex": 0,
+  "blackout": false,
+  "backgroundOn": false,
+  "backgroundUrl": "/bg/default.jpg",
+  "slides": [
+    {
+      "id": "sample-welcome",
+      "text": "Welcome\nQuickSlides"
+    },
+    {
+      "id": "sample-verse",
+      "text": "This is a sample verse\nWrite your own lyrics here"
+    },
+    {
+      "id": "sample-chorus",
+      "text": "Chorus\nKeep lines short for the projector"
+    },
+    {
+      "id": "sample-blank",
+      "text": ""
+    }
+  ]
+}

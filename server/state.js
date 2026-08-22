@@ -25,9 +25,17 @@ const path = require('path');
 const crypto = require('crypto');
 
 // Absolute path to the on-disk JSON file that is the source of truth between
-// server restarts. Lives in the project's data/ directory.
-const DATA_DIR = path.join(__dirname, '..', 'data');
+// server restarts. Lives in the project's data/ directory, unless a test (or
+// a weird install) points QUICKSLIDES_DATA_DIR somewhere else. Tests MUST set
+// that env var *before* requiring this module, or they would overwrite the
+// operator's real deck.json.
+const DATA_DIR = process.env.QUICKSLIDES_DATA_DIR
+	? path.resolve(process.env.QUICKSLIDES_DATA_DIR)
+	: path.join(__dirname, '..', 'data');
 const DECK_FILE = path.join(DATA_DIR, 'deck.json');
+// Shipped sample deck (original placeholder lyrics, safe to publish). Copied
+// to DECK_FILE on first load so a fresh clone has something to project.
+const EXAMPLE_FILE = path.join(__dirname, '..', 'data', 'deck.example.json');
 
 // The live, in-memory deck. Everything reads/writes this object. On startup we
 // hydrate it from disk (if present); otherwise we start with an empty deck.
@@ -67,11 +75,21 @@ function ensureDataDir() {
 	}
 }
 
+// If the operator has never saved a deck, seed from the example so a clone
+// of the public repo is immediately usable. Never overwrite an existing file.
+function seedFromExampleIfNeeded() {
+	if (fs.existsSync(DECK_FILE)) return;
+	if (!fs.existsSync(EXAMPLE_FILE)) return;
+	ensureDataDir();
+	fs.copyFileSync(EXAMPLE_FILE, DECK_FILE);
+}
+
 // Load the deck from disk into memory. Called once at startup. If the file is
 // missing or unreadable we fall back to an empty deck rather than crashing, so
 // a fresh checkout "just works" before any import has happened.
 function loadDeck() {
 	try {
+		seedFromExampleIfNeeded();
 		if (fs.existsSync(DECK_FILE)) {
 			const raw = fs.readFileSync(DECK_FILE, 'utf8');
 			const parsed = JSON.parse(raw);
@@ -105,8 +123,14 @@ function scheduleSave() {
 	saveTimer = setTimeout(saveNow, 250);
 }
 
-// Force an immediate synchronous-ish write of the current deck to disk.
+// Force an immediate write of the current deck to disk. Also cancels any
+// pending debounced write so a short-lived process (import CLI, tests) does
+// not exit with a timer still hanging, and does not double-write.
 function saveNow() {
+	if (saveTimer) {
+		clearTimeout(saveTimer);
+		saveTimer = null;
+	}
 	ensureDataDir();
 	try {
 		fs.writeFileSync(DECK_FILE, JSON.stringify(deck, null, 2), 'utf8');

@@ -32,7 +32,13 @@
 	// The last full deck state received from the server. Treated as the source of
 	// truth for rendering. We DO apply optimistic edits to slide.text locally so
 	// previews update instantly, but structural changes only come from the server.
-	let state = { currentIndex: 0, slides: [], blackout: false, backgroundOn: false, backgroundUrl: '' };
+	let state = {
+		currentIndex: 0,
+		slides: [],
+		blackout: false,
+		backgroundOn: false,
+		backgroundUrl: '',
+	};
 
 	// Which slide the editor is currently editing. This is a real, independent
 	// variable (not just "currentIndex") so the clobber-prevention logic has a
@@ -142,9 +148,7 @@
 	// Re-render the slide list from current state. Delegated to ControlList, which
 	// preserves scroll position and uses textContent for safe previews.
 	function renderList({ scrollCurrentIntoView, scrollSelectedIntoView } = {}) {
-		const matchIds = searchMatches.length
-			? new Set(searchMatches.map((m) => m.id))
-			: null;
+		const matchIds = searchMatches.length ? new Set(searchMatches.map((m) => m.id)) : null;
 		window.ControlList.render({
 			container: listEl,
 			slides: state.slides,
@@ -347,8 +351,7 @@
 
 	function cycleSearchMatch({ delta }) {
 		if (searchMatches.length === 0) return;
-		searchMatchIndex =
-			(searchMatchIndex + delta + searchMatches.length) % searchMatches.length;
+		searchMatchIndex = (searchMatchIndex + delta + searchMatches.length) % searchMatches.length;
 		selectForEditOnly({ id: searchMatches[searchMatchIndex].id, scroll: true });
 		renderSearchPopup();
 	}
@@ -455,8 +458,7 @@
 		// into view only when currentIndex actually changed — not on every
 		// keystroke preview re-render, which would yank the list around.
 		renderList({
-			scrollCurrentIntoView:
-				!skipNextCurrentScroll && state.currentIndex !== prevCurrentIndex,
+			scrollCurrentIntoView: !skipNextCurrentScroll && state.currentIndex !== prevCurrentIndex,
 		});
 		skipNextCurrentScroll = false;
 		syncEditor({ forceFocus: focusEditorOnNextState });

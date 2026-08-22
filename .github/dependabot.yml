@@ -1,0 +1,14 @@
+# Weekly bumps so npm and Actions do not silently rot.
+# Review the PR like any other change; do not merge a major Express/ws jump
+# without running npm test.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

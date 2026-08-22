@@ -1,0 +1,7 @@
+node_modules
+package-lock.json
+data/deck.json
+public/bg
+*.html
+*.css
+LICENSE

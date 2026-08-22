@@ -5,7 +5,8 @@
 // Usage:
 //     node server/import-cli.js [/absolute/path/to/file.pptx]
 //
-// If no path is given it defaults to the known Worship Set file in Downloads.
+// Path is argv[2], or QUICKSLIDES_PPTX, or a Downloads file if it exists
+// on this machine (see server/import-path.js).
 // The parsed slides replace the entire on-disk deck (data/deck.json) via the
 // existing state module, so after running this the app will present the imported
 // slides immediately on next load.
@@ -13,12 +14,18 @@
 
 const { importPptx } = require('./pptx-import');
 const state = require('./state');
-
-// Default source file. Overridable as argv[2] for importing any other deck.
-const DEFAULT_PPTX = '/Users/josiahbryan/Downloads/Worship Set - Slides Final.pptx';
+const { resolvePptxPath } = require('./import-path');
 
 async function main() {
-	const filePath = process.argv[2] || DEFAULT_PPTX;
+	const filePath = resolvePptxPath({
+		argvPath: process.argv[2],
+		envPath: process.env.QUICKSLIDES_PPTX,
+	});
+	if (!filePath) {
+		console.error('Usage: node server/import-cli.js <path-to.pptx>');
+		console.error('   or: QUICKSLIDES_PPTX=/path/to/deck.pptx npm run import');
+		process.exit(1);
+	}
 	console.log(`[import] Reading PPTX: ${filePath}`);
 
 	// Parse the .pptx into ordered, text-only slides.
@@ -49,7 +56,13 @@ async function main() {
 	});
 }
 
-main().catch((err) => {
-	console.error('[import] FAILED:', err.message);
-	process.exit(1);
-});
+// Only run the CLI when this file is the entry point. Tests require() the
+// path-resolution helper without importing a real .pptx.
+if (require.main === module) {
+	main().catch((err) => {
+		console.error('[import] FAILED:', err.message);
+		process.exit(1);
+	});
+}
+
+module.exports = { resolvePptxPath };

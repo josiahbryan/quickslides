@@ -1,20 +1,46 @@
 {
   "name": "quickslides",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server/index.js",
-    "import": "node server/import-cli.js"
+  "description": "Live-sync lyrics slides: a Control window and a Presentation window over WebSockets.",
+  "main": "server/index.js",
+  "license": "MIT",
+  "author": "Josiah Bryan",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/josiahbryan/quickslides.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/josiahbryan/quickslides/issues"
+  },
+  "homepage": "https://github.com/josiahbryan/quickslides#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "import": "node server/import-cli.js",
+    "test": "node --test test/*.test.js",
+    "lint": "eslint server public/js test eslint.config.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keywords": [
+    "slides",
+    "lyrics",
+    "worship",
+    "websocket"
+  ],
   "type": "commonjs",
   "dependencies": {
     "adm-zip": "^0.6.0",
     "express": "^5.2.1",
     "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.9.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.11.0",
+    "prettier": "^3.9.6"
   }
 }

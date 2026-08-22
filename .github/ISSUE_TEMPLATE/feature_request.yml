@@ -1,0 +1,26 @@
+name: Feature request
+description: A focused change you want in Control, Presentation, or the server
+title: '[feat] '
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you hitting
+      description: Describe the operator or projector moment, not a solution yet.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like instead
+      description: Keep it narrow. "Make it better" is too big.
+    validations:
+      required: true
+  - type: textarea
+    id: check
+    attributes:
+      label: How we would know it worked
+      description: The clicks / keys / assertions you would use.
+    validations:
+      required: true

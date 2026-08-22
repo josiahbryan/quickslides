@@ -37,9 +37,7 @@ function decodeXmlEntities({ value }) {
 	let out = value;
 
 	// Numeric character references: &#233; (decimal) and &#xE9; (hex).
-	out = out.replace(/&#x([0-9a-fA-F]+);/g, (_m, hex) =>
-		String.fromCodePoint(parseInt(hex, 16)),
-	);
+	out = out.replace(/&#x([0-9a-fA-F]+);/g, (_m, hex) => String.fromCodePoint(parseInt(hex, 16)));
 	out = out.replace(/&#(\d+);/g, (_m, dec) => String.fromCodePoint(parseInt(dec, 10)));
 
 	// Named entities (everything except &amp;, handled last).
@@ -104,10 +102,7 @@ function parseSlideText({ slideXml }) {
 	// preserved because they were intentional spacing in the original slide.
 	// A slide with only empty paragraphs collapses to "" here, which is correct:
 	// blank slides must still exist to preserve count/order, just with no text.
-	const text = lines
-		.join('\n')
-		.replace(/^\n+/, '')
-		.replace(/\s+$/, '');
+	const text = lines.join('\n').replace(/^\n+/, '').replace(/\s+$/, '');
 
 	return text;
 }
